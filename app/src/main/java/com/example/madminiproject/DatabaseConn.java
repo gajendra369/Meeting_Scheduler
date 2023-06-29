@@ -38,9 +38,14 @@ class DataBaseConn extends SQLiteOpenHelper {
         Cursor c = DB.rawQuery("Select time,agenda from meetingTbl where date='" + d + "' ", null);
         return c;
     }
-    public Cursor getrecords(String d) {
+    public Cursor getemail(String d) {
         SQLiteDatabase DB = this.getReadableDatabase();
         Cursor c = DB.rawQuery("Select email from reci where name ='" + d + "' ", null);
+        return c;
+    }
+    public Cursor getr() {
+        SQLiteDatabase DB = this.getReadableDatabase();
+        Cursor c = DB.rawQuery("Select name from reci ", null);
         return c;
     }
 //    public ArrayList<String> getRecords(String[] st){
@@ -68,4 +73,21 @@ class DataBaseConn extends SQLiteOpenHelper {
         else
             return true;
     }
+    public boolean del(String name) {
+
+        // on below line we are creating
+        // a variable to write our database.
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // on below line we are calling a method to delete our
+        // course and we are comparing it with our course name.
+        long res=db.delete("reci", "name=?", new String[]{name});
+        db.close();
+        if(res==-1){
+            return  false;
+        }
+        else
+            return true;
+    }
+
 }

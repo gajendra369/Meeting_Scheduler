@@ -82,7 +82,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Select recipient"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
             <ImageView
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
@@ -97,4 +97,11 @@
         android:layout_height="wrap_content"
         android:text="Add Meeting Schedule"
         />
+    <Button
+        android:id="@+id/btn3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="mail"
+        />
+
 </LinearLayout>
