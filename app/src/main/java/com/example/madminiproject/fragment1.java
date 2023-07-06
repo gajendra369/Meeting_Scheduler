@@ -1,5 +1,6 @@
 package com.example.madminiproject;
 
+
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -7,13 +8,13 @@ import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -22,27 +23,30 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
-import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
-import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class fragment1 extends Fragment {
     EditText date, time, agenda;
     DataBaseConn dbc;
-    Button btn,btn2;
+    Button btn;
+    RelativeLayout rel;
     TextView reci;
-    InternetAddress[] recipientAddress;
     ArrayList<Integer> rec= new ArrayList<Integer>();
     Calendar c = Calendar.getInstance();
     String[] req,emails;
@@ -57,9 +61,10 @@ public class fragment1 extends Fragment {
         date = view.findViewById(R.id.txtDate);
         time = view.findViewById(R.id.txtTime);
         agenda = view.findViewById(R.id.txtAgenda);
+
         btn = view.findViewById(R.id.btn1);
-        btn2=view.findViewById(R.id.btn3);
         reci=view.findViewById(R.id.reci);
+        rel=view.findViewById(R.id.rel);
         dbc = new DataBaseConn(getContext());
         date.setInputType(0);
         time.setInputType(0);
@@ -84,18 +89,18 @@ public class fragment1 extends Fragment {
                 mTime = time.getText().toString();
                 mAgenda = agenda.getText().toString();
                 if(mdate.length()!=0&&mTime.length()!=0&&mAgenda.length()!=0&&reci.getText().toString().length()!=0) {
-                    Boolean insert = dbc.insertvalue(mdate, mTime, mAgenda);
-                    if (insert == true) {
-                        Toast.makeText(getActivity(), "Data Inserted", Toast.LENGTH_SHORT).show();
-                    } else
-                        Toast.makeText(getActivity(), "Data NOT Inserted", Toast.LENGTH_SHORT).show();
+                    insert(mdate,mTime,mAgenda);
+                    mail(mAgenda,mTime);
+                    rec.clear();
                 }
-                else{
+                else {
                     Toast.makeText(getActivity(), "Fill all contents", Toast.LENGTH_SHORT).show();
                 }
+
             }
         });
-        reci.setOnClickListener(new View.OnClickListener() {
+
+        rel.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("Range")
             @Override
             public void onClick(View v) {
@@ -104,16 +109,16 @@ public class fragment1 extends Fragment {
                 boolean[] selreci;
                 c.moveToFirst();
                 String[] recip=new String[count];
-                recipientAddress = new InternetAddress[count];
                 req=new String[count];
                 emails=new String[count];
                 if (count > 0) {
-                    int i=0;
+                    int k=0;
                     do {
-                        req[i]=recip[i]=c.getString(c.getColumnIndex("name"));
-                        i++;
+                        req[k]=recip[k]=c.getString(c.getColumnIndex("name"));
+                        k++;
                     } while (c.moveToNext());
-                } else {
+                }
+                else {
                     Toast.makeText(getActivity(), "No recipients", Toast.LENGTH_LONG).show();
                 }
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
@@ -150,7 +155,11 @@ public class fragment1 extends Fragment {
                                 stringBuilder.append(", ");
                             }
                         }
-                        reci.setText(stringBuilder.toString());
+                        String noDuplicates = Arrays.asList(stringBuilder.toString().split(", "))
+                                .stream()
+                                .distinct()
+                                .collect(Collectors.joining(", "));
+                        reci.setText(noDuplicates);
                     }
                 });
 
@@ -174,64 +183,6 @@ public class fragment1 extends Fragment {
                 builder.show();
             }
         });
-        btn2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                @SuppressLint("Range")
-                String uname = "myextest36@gmail.com";
-                String pass = "igdinafbolmznfqa";
-                String email;
-                for(int j=0;j<req.length;j++) {
-                    Cursor c = dbc.getemail(req[j]);
-                    c.moveToFirst();
-                    int count = c.getCount();
-                    if (count > 0) {
-                        email = c.getString(c.getColumnIndex("email"));
-                        emails[j]=email;
-                    } else {
-                        Toast.makeText(getActivity(), "No recipients", Toast.LENGTH_LONG).show();
-                    }
-                }
-                StringBuilder stringBuilder = new StringBuilder();
-                for (int j = 0; j < emails.length; j++) {
-                    stringBuilder.append(emails[j]);
-                    if (j != emails.length - 1) {
-                        stringBuilder.append(",");
-                    }
-                }
-                email=stringBuilder.toString();
-
-                Properties prop = new Properties();
-                prop.put("mail.smtp.auth", "true");
-                prop.put("mail.smtp.starttls.enable", "true");
-                prop.put("mail.smtp.host", "smtp.gmail.com");
-                prop.put("mail.smtp.port", "587");
-                Session s = Session.getInstance(prop, new javax.mail.Authenticator() {
-                    @Override
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(uname, pass);
-                    }
-                });
-                try {
-//                    int counter = 0;
-//                    for (String recipient : emails) {
-//                        recipientAddress[counter] = new InternetAddress(recipient.trim());
-//                        counter++;
-//                    }
-                    agenda.setText(email);
-                    Message m = new MimeMessage(s);
-                    m.setFrom(new InternetAddress(uname));
-                    m.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
-                    m.setSubject("hi");
-                    m.setText("hello");
-                    Transport.send(m);
-                    Toast.makeText(getContext(), "successful", Toast.LENGTH_LONG).show();
-                } catch (Exception e) {
-                }
-                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-                StrictMode.setThreadPolicy(policy);
-          }
-            });
         return view;
     }
     private  void datedailog(){
@@ -241,6 +192,7 @@ public class fragment1 extends Fragment {
                 date.setText(String.format(Locale.getDefault(), "%02d/%02d/%04d", d, m+1,y));
             }
         },mY,mM,mD);
+        dt.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
         dt.show();
     }
     private  void timedailog(){
@@ -255,5 +207,71 @@ public class fragment1 extends Fragment {
 
     },00,00,false);
         tm.show();}
+    public  void insert(String mdate,String  mTime,String mAgenda){
+        Boolean insert = dbc.insertvalue(mdate, mTime, mAgenda,reci.getText().toString());
+        if (insert == true) {
+            Toast.makeText(getActivity(), "Data Inserted", Toast.LENGTH_SHORT).show();
+            date.setText("");
+            time.setText("");
+            agenda.setText("");
+            reci.setText("");
+            reci.setHint("Select Recipient");
+
+        } else
+            Toast.makeText(getActivity(), "Data NOT Inserted", Toast.LENGTH_SHORT).show();
+    }
+    public void mail(String msg,String t){
+        String uname = "myextest36@gmail.com";
+        String pass = "igdinafbolmznfqa";
+        final String[] email = new String[1];
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+        for (int j = 0; j < req.length; j++) {
+            Cursor c = dbc.getemail(req[j]);
+            c.moveToFirst();
+            int count = c.getCount();
+            if (count > 0) {
+                email[0] = c.getString(c.getColumnIndex("email"));
+                emails[j] = email[0];
+            } else {
+                Toast.makeText(getActivity(), "No recipients", Toast.LENGTH_LONG).show();
+            }
+        }
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int j = 0; j < emails.length; j++) {
+            stringBuilder.append(emails[j]);
+            if (j != emails.length - 1) {
+                stringBuilder.append(",");
+            }
+        }
+        email[0] = stringBuilder.toString();
+        Properties prop = new Properties();
+        prop.put("mail.smtp.auth", "true");
+        prop.put("mail.smtp.starttls.enable", "true");
+        prop.put("mail.smtp.host", "smtp.gmail.com");
+        prop.put("mail.smtp.port", "587");
+        Session s = Session.getInstance(prop, new javax.mail.Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(uname, pass);
+            }
+        });
+
+                    Message m = new MimeMessage(s);
+                    m.setFrom(new InternetAddress(uname));
+                    m.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email[0]));
+                    m.setSubject("Invitation for meeting");
+                    m.setText("Hello,\nPlease attend the meeting regarding "+msg+" on "+t+".");
+                    Transport.send(m);
+                    //Toast.makeText(getContext(), "successful", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+    }
 
 }

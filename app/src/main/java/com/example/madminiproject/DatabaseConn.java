@@ -13,19 +13,20 @@ class DataBaseConn extends SQLiteOpenHelper {
     }
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create Table meetingTbl(date TEXT,time TEXT, agenda TEXT)");
+        db.execSQL("create Table meetingTbl(date TEXT,time TEXT, agenda TEXT,partic TEXT)");
         db.execSQL("create Table reci(name TEXT,email TEXT)");
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("drop Table if exists meetingTbl");
         db.execSQL("drop Table if exists reci");}
-    public boolean insertvalue(String d, String t, String agd){
+    public boolean insertvalue(String d, String t, String agd,String p){
         SQLiteDatabase DB=this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put("date",d);
         cv.put("time",t);
         cv.put("agenda",agd);
+        cv.put("partic",p);
         long res=DB.insert("meetingTbl",null,cv);
         if(res==-1){
             return  false;
@@ -35,7 +36,7 @@ class DataBaseConn extends SQLiteOpenHelper {
     }
     public Cursor fetch(String d) {
         SQLiteDatabase DB = this.getReadableDatabase();
-        Cursor c = DB.rawQuery("Select time,agenda from meetingTbl where date='" + d + "' ", null);
+        Cursor c = DB.rawQuery("Select time,agenda,partic from meetingTbl where date='" + d + "' ", null);
         return c;
     }
     public Cursor getemail(String d) {
